@@ -70,8 +70,8 @@ Script profissional para provisionamento de um ambiente de desenvolvimento compl
 1. Clone este repositório:
 
 ```bash
-git clone https://github.com/seuusuario/nome-repositorio.git
-cd nome-repositorio
+git clone https://github.com/metratonpr/wsl-script.git
+cd wsl-script
 ```
 
 2. Torne o script executável:
