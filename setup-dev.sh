@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "========================================"
-echo "  🚀 Ambiente de Desenvolvimento WSL"
+echo " 🚀 Ambiente de Desenvolvimento WSL Ultimate"
 echo "========================================"
 
 # Atualizar pacotes
@@ -9,11 +9,11 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install -y software-properties-common curl wget git unzip build-essential apt-transport-https gnupg2 lsb-release ca-certificates
 
 # ================================
-# PHP e Laravel
+# PHP e Extensões Completas
 # ================================
 sudo add-apt-repository ppa:ondrej/php -y
 sudo apt update
-sudo apt install -y php8.2 php8.2-cli php8.2-common php8.2-mbstring php8.2-xml php8.2-mysql php8.2-curl php8.2-zip php8.2-bcmath php8.2-gd php8.2-sqlite3 php8.2-imap php8.2-readline php8.2-intl php8.2-soap
+sudo apt install -y php8.2 php8.2-cli php8.2-common php8.2-curl php8.2-mbstring php8.2-xml php8.2-zip php8.2-mysql php8.2-bcmath php8.2-tokenizer php8.2-gd php8.2-intl php8.2-soap php8.2-opcache php8.2-readline php8.2-fpm php8.2-imap
 
 cd ~
 curl -sS https://getcomposer.org/installer | php
@@ -125,36 +125,61 @@ docker run -d --name kafka --network kafka-net -e KAFKA_ZOOKEEPER_CONNECT=zookee
 -p 9092:9092 confluentinc/cp-kafka
 
 # ================================
-# Servidores Web (Nginx, Apache, Caddy, Nginx Proxy Manager)
+# Apache e Ferramentas Web
 # ================================
-sudo apt install -y nginx apache2 supervisor
+sudo apt install -y apache2 supervisor phpmyadmin
+sudo systemctl enable apache2
+sudo systemctl start apache2
 
-wget https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64
-sudo mv MailHog_linux_amd64 /usr/local/bin/mailhog
-sudo chmod +x /usr/local/bin/mailhog
+sudo ln -s /usr/share/phpmyadmin /var/www/html/phpmyadmin
 
-# Caddy Server
-sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo tee /etc/apt/trusted.gpg.d/caddy-stable.asc
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-sudo apt update
-sudo apt install -y caddy
+mkdir -p /var/www/html/adminer
+wget "https://github.com/vrana/adminer/releases/download/v4.8.1/adminer-4.8.1.php" -O /var/www/html/adminer/index.php
 
-# Nginx Proxy Manager via Docker
-mkdir -p ~/nginx-proxy-manager && cd ~/nginx-proxy-manager
+mkdir -p ~/mongo-express && cd ~/mongo-express
 cat <<EOL > docker-compose.yml
 version: '3'
 services:
-  app:
-    image: 'jc21/nginx-proxy-manager:latest'
+  mongo-express:
+    image: mongo-express
     restart: unless-stopped
     ports:
-      - '81:81'
-      - '80:80'
-      - '443:443'
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+    networks:
+      - mongo-network
+  mongodb:
+    image: mongo
+    restart: unless-stopped
+    networks:
+      - mongo-network
+networks:
+  mongo-network:
+    driver: bridge
+EOL
+
+docker-compose up -d
+cd ~
+
+sudo docker run -d --name redis-commander -p 8082:8081 --restart unless-stopped --network host rediscommander/redis-commander:latest
+
+mkdir -p ~/pgadmin && cd ~/pgadmin
+cat <<EOL > docker-compose.yml
+version: '3'
+services:
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
     volumes:
-      - ./data:/data
-      - ./letsencrypt:/etc/letsencrypt
+      - pgadmin-data:/var/lib/pgadmin
+volumes:
+  pgadmin-data:
 EOL
 
 docker-compose up -d
@@ -180,13 +205,21 @@ curl -sS https://starship.rs/install.sh | sh -s -- -y
 echo 'eval "$(starship init bash)"' >> ~/.bashrc
 
 # ================================
+# Configurações Git e SSH
+# ================================
+git config --global color.ui true
+git config --global user.name "Juliano Roque Vieira"
+git config --global user.email "julianovieira@yahoo.com.br"
+ssh-keygen -t ed25519 -C "julianovieira@yahoo.com.br" -f ~/.ssh/id_ed25519 -N ""
+
+# ================================
 # Finalizacao
 # ================================
 echo "========================================"
-echo " 👌 Ambiente configurado com sucesso!"
+echo " ✅ Ambiente configurado com sucesso!"
 echo " ➕ Reinicie o WSL ou execute: source ~/.bashrc"
 echo " 🚀 Bancos rodando: MySQL, PostgreSQL, MongoDB, Redis, Neo4j, TimescaleDB"
-echo " 🌍 Servicos: Elasticsearch, Kibana, Logstash, RabbitMQ, Kafka, Nginx, Apache, Caddy, Nginx Proxy Manager, Mailhog, Grafana"
+echo " 🌍 Servicos: Elasticsearch, Kibana, Logstash, RabbitMQ, Kafka, Apache, Mailhog, phpMyAdmin, Adminer, Mongo Express, Redis Commander, pgAdmin, Grafana"
 echo " 🔧 Linguagens: PHP, Python, Node, Java, .NET, Rust, Ruby"
 echo " 🎯 IA e Visao Computacional: TensorFlow, Keras, PyTorch, Transformers, YOLOv8, OpenCV, Detectron2, Mediapipe"
 echo " ========================================"
