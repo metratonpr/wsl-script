@@ -80,6 +80,13 @@ gem install rails -v 7.1.3
 # Banco de Dados
 # ================================
 sudo apt install -y mysql-server postgresql postgresql-contrib redis-server
+sudo apt install -y libpq-dev python3-dev
+pip install psycopg2-binary sqlalchemy
+pip install pyarrow fastparquet openpyxl xlsxwriter
+pip install or-tools networkx
+
+
+
 
 wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
 echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
@@ -132,6 +139,12 @@ docker run -d --name kafka --network kafka-net -e KAFKA_ZOOKEEPER_CONNECT=zookee
 sudo apt install -y apache2 supervisor phpmyadmin
 sudo systemctl enable apache2
 sudo systemctl start apache2
+
+echo "Mudando Apache para porta 8080..."
+sudo sed -i 's/80/8080/g' /etc/apache2/ports.conf
+sudo sed -i 's/:80/:8080/g' /etc/apache2/sites-available/000-default.conf
+sudo systemctl restart apache2
+
 
 sudo ln -s /usr/share/phpmyadmin /var/www/html/phpmyadmin
 
@@ -188,6 +201,31 @@ docker-compose up -d
 cd ~
 
 # ================================
+# Dependências OSRM (Open Source Routing Machine)
+# ================================
+sudo apt install -y cmake g++ libtbb-dev libboost-all-dev libprotobuf-dev protobuf-compiler \
+libosmpbf-dev libstxxl-dev libxml2-dev libzip-dev libbz2-dev liblua5.3-dev lua5.3
+
+echo "✅ Dependências do OSRM instaladas!"
+echo "📌 Agora clone manualmente o OSRM backend se quiser: https://github.com/Project-OSRM/osrm-backend"
+
+# ================================
+# Ajuste do Apache para Porta 8080
+# ================================
+echo "✅ Alterando Apache para rodar na porta 8080 (evitar conflito com phpMyAdmin)..."
+sudo sed -i 's/80/8080/g' /etc/apache2/ports.conf
+sudo sed -i 's/:80/:8080/g' /etc/apache2/sites-available/000-default.conf
+sudo systemctl restart apache2
+
+# ================================
+# Dependências Python adicionais (PostgreSQL + Arquivos espaciais + Otimização + ORM)
+# ================================
+sudo apt install -y libpq-dev python3-dev
+pip install --upgrade pip
+pip install psycopg2-binary sqlalchemy pyarrow fastparquet openpyxl xlsxwriter or-tools networkx
+
+
+# ================================
 # Grafana
 # ================================
 sudo apt-get install -y software-properties-common
@@ -205,6 +243,7 @@ sudo apt install -y zsh tmux
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 curl -sS https://starship.rs/install.sh | sh -s -- -y
 echo 'eval "$(starship init bash)"' >> ~/.bashrc
+
 
 # ================================
 # Configurações Git e SSH
